@@ -41,3 +41,4 @@ zinit light zsh-users/zsh-autosuggestions
 eval "$(starship init zsh)"
 
 alias ts=tig -S
+alias vim="nvim"
