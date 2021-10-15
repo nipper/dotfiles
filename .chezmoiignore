@@ -1,0 +1,4 @@
+{{ if eq .comp_type "work" }}
+.zshrc
+.gitconfig
+{{ end }}
