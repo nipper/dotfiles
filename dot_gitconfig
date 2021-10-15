@@ -1,0 +1,108 @@
+[init]
+	defaultBranch = main
+[user]
+	email = nipper@gmail.com
+	name = Sam
+[alias]
+	please = !git push --force-with-lease $(git config branch.$(git rev-parse --abbrev-ref HEAD).remote) +$(git config branch.$(git rev-parse --abbrev-ref HEAD).merge | sed \"s/^refs\\/heads\\///\")
+	commend = commit --amend --no-edit
+	it = !git init && git commit -m "root" --allow-empty
+	st = stash
+	stsh = stash --keep-index
+	staash = stash --include-untracked
+	staaash = stash --all
+	now = status --short --branch
+	origin = !git remote show origin | sed -n '/HEAD branch/s/.*: //p'
+	pn = !"                                                                                                              \
+		function push_new() {                                                                                            \
+			local git_remote;                                                                                            \
+			[[ -z \"$(git remote | rg '^origin$')\" ]] && git_remote=\"$(git remote | head -1)\" || git_remote='origin'; \
+			git push \"$@\" -u \"$git_remote\" \"$(git branch --show-current)\";                                         \
+		};                                                                                                               \
+		push_new                                                                                                         \
+	"
+	fzf = !"                                                                                                                                                                              \
+		function gfzf() {                                                                                                                                                                 \
+			local filter;                                                                                                                                                                 \
+			if [ -n $@ ] && [ -e $@ ]; then                                                                                                                                               \
+				filter=\"-- $@\";                                                                                                                                                         \
+			fi;                                                                                                                                                                           \
+			export LESS='-R'                                                                                                                                                              \
+			export BAT_PAGER='less -S -R -M -i';                                                                                                                                          \
+			git log                                                                                                                                                                       \
+				--graph --color=always --abbrev=7 --glob=\"refs/heads/*\"                                                                                                                 \
+				--format=format:\"%C(bold blue)%h%C(reset) %C(dim white)%an%C(reset)%C(bold yellow)%d%C(reset) %C(white)%s%C(reset) %C(bold green)(%ar)%C(reset)\" $@ |                   \
+					fzf --ansi --no-sort --layout=reverse --tiebreak=index                                                                                                                \
+						--preview=\"f() { set -- \\$(echo -- \\$@ | rg -o '\\b[a-f0-9]{7,}\\b'); [ \\$# -eq 0 ] || git show --color=always \\$1 $filter | delta --line-numbers; }; f {}\" \
+						--bind=\"ctrl-j:preview-down,ctrl-k:preview-up,ctrl-f:preview-page-down,ctrl-b:preview-page-up\"                                                                  \
+						--bind=\"ctrl-m:execute:                                                                                                                                          \
+								(rg -o '\\b[a-f0-9]{7,}\\b' | head -1 | xargs -I % -- git show --color=always %) << FZFEOF\n                                                              \
+								{}                                                                                                                                                        \
+								\nFZFEOF\"                                                                                                                                                \
+						--bind=\"alt-h:execute-silent:                                                                                                                                    \
+								(f() { set -- \\$(rg -o '\\b[a-f0-9]{7,}\\b' | head -1 | tr -d \\$'\\n');                                                                                 \
+								[[ -n \\$TMUX ]] && tmux display -d0 \\\"#[bg=blue,italics] Branches #[none,fg=black,bg=default] \\$(git branch --contains \\$1 | sed 's/^\\*\\?\\s\\+//' \
+								| sort | paste -sd, - | sed 's/,/, /g')\\\"; }; f) << FZFEOF\n                                                                                            \
+								{}                                                                                                                                                        \
+								\nFZFEOF\"                                                                                                                                                \
+						--bind=\"alt-H:execute-silent:                                                                                                                                    \
+								(f() { set -- \\$(rg -o '\\b[a-f0-9]{7,}\\b' | head -1 | tr -d \\$'\\n');                                                                                 \
+								SUMMARY=\\\"\\$(git show --format='%s' \\$1 | head -1)\\\";                                                                                               \
+								[[ -n \\$TMUX ]] && tmux display -d0 \\\"#[bg=blue,italics] Branches (Grep) #[none,fg=black,bg=default] \\$(git log --all --format='%H' -F                \
+								--grep=\\\"\\$SUMMARY\\\" | xargs -I{} -- git branch --contains {}                                                                                        \
+								| sed 's/^\\*\\?\\s\\+//' | sort | uniq | paste -sd, - | sed 's/,/, /g')\\\"; }; f) << FZFEOF\n                                                           \
+								{}                                                                                                                                                        \
+								\nFZFEOF\"                                                                                                                                                \
+						--bind=\"alt-n:execute-silent:                                                                                                                                    \
+								(f() { set -- \\$(rg -o '\\b[a-f0-9]{7,}\\b' | head -1 | tr -d \\$'\\n');                                                                                 \
+								[[ -n \\$TMUX ]] && tmux display -d0 \\\"#[bg=blue,italics] Tags #[none,fg=black,bg=default] \\$(git tag --contains \\$1 | sed 's/^\\*\\?\\s\\+//'        \
+								| sort | paste -sd, - | sed 's/,/, /g')\\\"; }; f) << FZFEOF\n                                                                                            \
+								{}                                                                                                                                                        \
+								\nFZFEOF\"                                                                                                                                                \
+						--bind=\"alt-N:execute-silent:                                                                                                                                    \
+								(f() { set -- \\$(rg -o '\\b[a-f0-9]{7,}\\b' | head -1 | tr -d \\$'\\n');                                                                                 \
+								SUMMARY=\\\"\\$(git show --format='%s' \\$1 | head -1)\\\";                                                                                               \
+								[[ -n \\$TMUX ]] && tmux display -d0 \\\"#[bg=blue,italics] Tags (Grep) #[none,fg=black,bg=default] \\$(git log --all --format='%H' -F                    \
+								--grep=\\\"\\$SUMMARY\\\" | xargs -I{} -- git tag --contains {}                                                                                           \
+								| sed 's/^\\*\\?\\s\\+//' | sort | uniq | paste -sd, - | sed 's/,/, /g')\\\"; }; f) << FZFEOF\n                                                           \
+								{}                                                                                                                                                        \
+								\nFZFEOF\"                                                                                                                                                \
+						--bind=\"ctrl-y:execute-silent:                                                                                                                                   \
+								(f() { set -- \\$(rg -o '\\b[a-f0-9]{7,}\\b' | head -1 | tr -d \\$'\\n');                                                                                 \
+								printf '%s' \\$1 | clipboard; [[ -n \\$TMUX ]] && tmux display \\\"#[bg=blue,italics] Yanked #[none,fg=black,bg=default] \\$1\\\"; }; f) << FZFEOF\n      \
+								{}                                                                                                                                                        \
+								\nFZFEOF\"                                                                                                                                                \
+						--bind=\"ctrl-s:execute-silent:                                                                                                                                   \
+								(f() { set -- \\$(rg -o '\\b[a-f0-9]{7,}\\b' | head -1 | tr -d \\$'\\n');                                                                                 \
+								SUMMARY=\\\"\\$(git show --format='%s' \\$1 | head -1)\\\";                                                                                               \
+								printf '%s' \\\"\\$SUMMARY\\\" | clipboard;                                                                                                               \
+								[[ -n \\$TMUX ]] && tmux display \\\"#[bg=blue,italics] Yanked #[none,fg=black,bg=default] \\$SUMMARY\\\"; }; f) << FZFEOF\n                              \
+								{}                                                                                                                                                        \
+								\nFZFEOF\"                                                                                                                                                \
+						--bind=\"ctrl-l:execute:(f() { set -- \\$(rg -o '\\b[a-f0-9]{7,}\\b' | head -1 | tr -d \\$'\\n'); git lgl | less -p \\$1 +'u'; }; f) << FZFEOF\n                  \
+								{}                                                                                                                                                        \
+								\nFZFEOF\"                                                                                                                                                \
+						--preview-window=right:60%;                                                                                                                                       \
+		};                                                                                                                                                                                \
+		gfzf                                                                                                                                                                              \
+	"
+	co = checkout
+	pm = !git pull $(git config branch.$(git rev-parse --abbrev-ref HEAD).remote) $(git config branch.$(git rev-parse --abbrev-ref HEAD).merge | sed \"s/^refs\\/heads\\///\")
+	mne = merge --no-edit
+	com = commit
+	reb = rebase
+	mer = merge
+	bl = blame
+	df = diff
+	ds = diff --staged
+	pa = push --all
+	pt = push --tags
+	cp = cherry-pick
+	fp = format-patch --signoff --stdout -M -C
+	fixup = !git lb $(git branch --show-current) | awk '{print $1}' | xargs -I % git commit --fixup %
+	lb = !" \
+	function gitl() { \
+		git log  \"$@\" --pretty=format:'%C(auto)%h%d (%cr) %cn <%ce> %s' | fzf --ansi --reverse --no-sort; \
+		}; \
+		gitl \
+	"
